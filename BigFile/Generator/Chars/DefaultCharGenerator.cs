@@ -13,7 +13,7 @@ namespace BigFile.Generator.Chars
 
         public char GetNextChar()
         {
-            return Constants.Alphabet[_random.Next(0, Constants.AlphabetLength)];
+            return Constants.Alphabet[_random.Next(0, Constants.AlphabetLength - 1)];
         }
     }
 }

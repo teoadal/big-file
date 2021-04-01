@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Mime;
 using BigFile.Models;
 using BigFile.Sorter;
-using BigFile.Sorter.Buffer;
 
 namespace BigFile.Tester
 {
@@ -78,6 +76,7 @@ namespace BigFile.Tester
             var counter = new Counter();
             var fileLength = reader.Length;
             var readerPositionPrev = 0L;
+            var repeatsCount = 0L;
 
             var dataRecordPrev = new DataRecord(long.MinValue, ReadOnlySpan<char>.Empty);
             foreach (var dataRecord in reader)
@@ -95,6 +94,11 @@ namespace BigFile.Tester
                     readerPositionPrev = readerPosition;
                 }
 
+                if (dataRecordPrev.Value.Equals(dataRecord.Value, Constants.ValueComparison))
+                {
+                    repeatsCount++;
+                }
+                
                 counter.SetMinMax(dataRecord.Number);
                 counter.IncrementLineCount();
 
@@ -105,6 +109,7 @@ namespace BigFile.Tester
             Console.WriteLine("Data is really sorted");
             Console.WriteLine($"Numbers between {counter.MinNumber} and {counter.MaxNumber}");
             Console.WriteLine($"Lines count {counter.LinesCount}");
+            Console.WriteLine($"Repeats count {repeatsCount}");
         }
 
         private void ShowProgress(long readerPosition, long fileSize, double elapsedSeconds)

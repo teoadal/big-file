@@ -18,6 +18,7 @@ namespace BigFile.Generator
         private readonly Random _random;
 
         private int _repeatPosition;
+        private long _repeatsCount;
 
         public FileGenerator(GenerateOptions options)
         {
@@ -67,27 +68,29 @@ namespace BigFile.Generator
                 writtenBytes = writerFileStream.Length;
             }
 
+            EnsureRepeatsExists(writer, repeats);
+
             writer.Flush();
             writer.Dispose();
 
             ShowProgress(writtenBytes, fileSize, timer.Elapsed.TotalSeconds);
+
             Console.WriteLine();
+            Console.WriteLine($"Created {_repeatsCount} repeats");
         }
 
-        private void ShowProgress(long writtenBytes, long fileSize, double elapsedSeconds)
+        private void EnsureRepeatsExists(StreamWriter writer, string[] repeats)
         {
-            var writtenMegabytes = Math.Round(writtenBytes / Constants.Megabyte);
+            if (_repeatsCount >= repeats.Length && _repeatsCount >= 10) return;
 
-            Console.CursorLeft = 0;
-
-            var writer = _consoleWriter;
-            writer.Write("Progress ");
-            writer.Write(Math.Round((double) writtenBytes / fileSize * 100d));
-            writer.Write("% (total ");
-            writer.Write(writtenMegabytes);
-            writer.Write(" MB, per second ");
-            writer.Write(Math.Round(writtenMegabytes / elapsedSeconds));
-            writer.Write(" MB)...");
+            writer.WriteLine();
+            for (var i = 0; i < 10; i++)
+            {
+                writer.WriteLong(_random.Next());
+                writer.Write(Constants.NumberPostfix);
+                WriteNextRepeat(writer, repeats);
+                writer.WriteLine();
+            }
         }
 
         private ReadOnlySpan<char> GenerateChars()
@@ -108,7 +111,11 @@ namespace BigFile.Generator
         private string[] GenerateRepeats()
         {
             var timer = Stopwatch.StartNew();
-            var repeats = new string[_options.Size / 100 * _options.RepeatPercent / _averageLineSize];
+
+            var repeatsCount = _options.Size / 100 * _options.RepeatPercent / _averageLineSize;
+            if (repeatsCount == 0) repeatsCount = 1;
+
+            var repeats = new string[repeatsCount];
 
             for (var repeatIndex = 0; repeatIndex < repeats.Length; repeatIndex++)
             {
@@ -119,6 +126,23 @@ namespace BigFile.Generator
             Console.WriteLine($"Generated {repeats.Length} repeats at {timer.Elapsed}");
 
             return repeats;
+        }
+
+        private void ShowProgress(long writtenBytes, long fileSize, double elapsedSeconds)
+        {
+            var progress = Math.Round((double) writtenBytes / fileSize * 100d);
+            var writtenMegabytes = Math.Round(writtenBytes / Constants.Megabyte);
+
+            Console.CursorLeft = 0;
+
+            var writer = _consoleWriter;
+            writer.Write("Progress ");
+            writer.Write(progress > 100d ? 100d : progress);
+            writer.Write("% (total ");
+            writer.Write(writtenMegabytes);
+            writer.Write(" MB, per second ");
+            writer.Write(Math.Round(writtenMegabytes / elapsedSeconds));
+            writer.Write(" MB)...");
         }
 
         private void WriteBlock(StreamWriter writer, long startId, int length, string[] repeats)
@@ -157,17 +181,33 @@ namespace BigFile.Generator
 
                 if (random.Next(0, 100) < repeatPercent)
                 {
-                    var position = _repeatPosition++;
-                    if (position == repeats.Length) position = 0;
-                    _repeatPosition = position;
-
-                    writer.Write(repeats[position]);
+                    WriteNextRepeat(writer, repeats);
                 }
                 else
                 {
                     writer.Write(GenerateChars());
                 }
             }
+        }
+
+        private void WriteNextRepeat(StreamWriter writer, string[] repeats)
+        {
+            string repeat;
+            if (_options.WellGenerator)
+            {
+                repeat = repeats[_random.Next(0, repeats.Length - 1)];
+            }
+            else
+            {
+                var position = _repeatPosition++;
+                if (position == repeats.Length) position = 0;
+                _repeatPosition = position;
+
+                repeat = repeats[position];
+            }
+
+            writer.Write(repeat);
+            _repeatsCount++;
         }
     }
 }

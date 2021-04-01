@@ -16,7 +16,7 @@ namespace BigFile.Sorter.Buffer
         private bool _disposed;
         private DataBufferEntry[] _entries;
 
-        public DataBuffer(uint capacity = 1_800_000u)
+        public DataBuffer(uint capacity = 1_500_000u)
         {
             _buckets = new int[capacity];
             _capacity = capacity;
