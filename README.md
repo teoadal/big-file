@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/teoadal/big-file/badge)](https://www.codefactor.io/repository/github/teoadal/big-file)
+
 # BigFile (External sort)
 
 Это консольная утилита для создания, сортировки и проверки больших файлов.
